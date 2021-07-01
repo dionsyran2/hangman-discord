@@ -1,9 +1,14 @@
-# Whats new in 1.3.9
+# Whats new in 1.4.1
+* Removed a useless library that was installed
+
 * Fixed bugs from 1.3.4 and 1.3.8
 * Multiplayer Works
 * In multiplayer the host (**The person who selects the word**) cannot play!
 * In singleplayer only one person (The person who runs the start command) can play!
 
+
+# in 1.3.9 - 1.4.0
+Removing useless dependencies
 
 # 1.3.8
 * A lot of bug fixes, **BUT** multiplayer does not work!!!

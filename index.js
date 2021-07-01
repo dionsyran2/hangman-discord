@@ -5,7 +5,6 @@ var emitter = require('events').EventEmitter;
 var em = new emitter();
 const fetch = require("node-fetch")
 var nodeHtmlToImage = require('node-html-to-image');
-var pdfcrowd = require("pdfcrowd");
 let imgs = ["https://i.imgur.com/mAWaxug.png", "https://i.imgur.com/l0fLASr.png", "https://i.imgur.com/c8uaMBQ.png", "https://i.imgur.com/pRng4Tl.png", "https://i.imgur.com/boDJ25n.png", "https://i.imgur.com/ArNimLI.png", "https://i.imgur.com/kkYj06y.png"]
 
 
@@ -42,17 +41,6 @@ async function getImage(url, word2, mistakesString, message) {
     })
 
 
-    //var client = new pdfcrowd.HtmlToImageClient("demo", "ce544b6ea52a5621fb9d55f8b542d14d");
-
-    // run the conversion and write the result to a file
-   // console.log(message.guild.id)
-    //client.convertStringToFile(
-     //   _htmlTemplate,
-     //   toString(message.guild.id)+".png",
-     //   function(err, fileName) {
-    //        if (err) return console.error("Pdfcrowd Error: " + err);
-    //        console.log("Success: the file was created " + fileName);
-    //    });
     
     return images
 }
