@@ -1,18 +1,12 @@
-let MultiOrSingleV = {}
-
 var emitter = require('events').EventEmitter;
+
+let MessageAttachment = null
 
 var em = new emitter();
 const fetch = require("node-fetch")
 var nodeHtmlToImage = require('node-html-to-image');
 let imgs = ["https://i.imgur.com/mAWaxug.png", "https://i.imgur.com/l0fLASr.png", "https://i.imgur.com/c8uaMBQ.png", "https://i.imgur.com/pRng4Tl.png", "https://i.imgur.com/boDJ25n.png", "https://i.imgur.com/ArNimLI.png", "https://i.imgur.com/kkYj06y.png"]
-
-
-function sleep(ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
+let games = {}
 
 
 
@@ -41,570 +35,224 @@ async function getImage(url, word2, mistakesString, message) {
     })
 
 
-    
+
     return images
 }
+
+
+
 
 async function getWord() {
     let word
     await fetch('https://random-words-api.vercel.app/word')
         .then(res => res.json())
-        .then(json =>word = json);
+        .then(json => word = json);
     word = word[0].word
-    em.emit("wordSet", word)
     return word
 }
-
-
-
-
-
-async function getWordMulti(client, message, discord) {
-    MultiOrSingleV[message.guild.id].waitingForWord = true
-    let word = null
-    message.author.send('Please type a word, you have **15 seconds**').catch(() => { message.reply("I was unable to DM you!"); MultiOrSingleV[message.guild.id] = null })
-    client.on("message", (msg) => {
-        if (MultiOrSingleV[message.guild.id] == null) return;
-        if (msg.guild == null && msg.author.id == message.author.id && MultiOrSingleV[message.guild.id].waitingForWord == true) {
-            wrd = msg.content.split(" ")[0]
-            MultiOrSingleV[message.guild.id].waitingForWord = false
-            word = wrd
-        }
-    })
-    for (i = 0; i < 16; i++) {
-        if (MultiOrSingleV[message.guild.id].waitingForWord == false) {
-            break;
-        } else {
-            await sleep(1000)
-        }
-    }
-    if (MultiOrSingleV[message.guild.id].waitingForWord == true) {
-        MultiOrSingleV[message.guild.id] = null
-        message.author.send("You did not reply in time!").catch(() => { console.log("Could not send message to user!") })
-    }
-
-    em.emit("wordSet", word)
-    return word
-
-}
-
-async function StartMulti(client, message, discord){
-    try{
-    MultiOrSingleV[message.guild.id].word = await getWordMulti(client, message, discord)
-
-
-    if (MultiOrSingleV[message.guild.id].word == null) {
-        MultiOrSingleV[message.guild.id] = null
-        return
-    }
-    //variables
-    const MessageAttachment = discord.MessageAttachment
-
-    MultiOrSingleV[message.guild.id].letters = []
-
-    MultiOrSingleV[message.guild.id].WordLetters = []
-
-    MultiOrSingleV[message.guild.id].mistakesString = ""
-
-    //create the table with the characters
-    for (var i = 0; i < MultiOrSingleV[message.guild.id].word.length; i++) {
-        MultiOrSingleV[message.guild.id].letters.push(MultiOrSingleV[message.guild.id].word.charAt(i))
-        if (i == 0) {
-            MultiOrSingleV[message.guild.id].WordLetters.push(MultiOrSingleV[message.guild.id].word.charAt(i))
-        } else if (i == MultiOrSingleV[message.guild.id].word.length - 1) {
-            MultiOrSingleV[message.guild.id].WordLetters.push(MultiOrSingleV[message.guild.id].word.charAt(i))
-        } else {
-            MultiOrSingleV[message.guild.id].WordLetters.push("_")
-        }
-    }
-
-    //creates the text to display to the users
-    MultiOrSingleV[message.guild.id].word2 = ""
-    for (var i = 0; i < MultiOrSingleV[message.guild.id].WordLetters.length; i++) {
-        MultiOrSingleV[message.guild.id].word2 = MultiOrSingleV[message.guild.id].word2 + MultiOrSingleV[message.guild.id].WordLetters[i]
-    }
-
-    //creates the message to send
-    //let imgs = ["https://i.imgur.com/mAWaxug.png", "https://i.imgur.com/l0fLASr.png", "https://i.imgur.com/c8uaMBQ.png", "https://i.imgur.com/pRng4Tl.png", "https://i.imgur.com/boDJ25n.png", "https://i.imgur.com/ArNimLI.png", "https://i.imgur.com/kkYj06y.png"]
-    MultiOrSingleV[message.guild.id].mistakes = []
-    let url = imgs[MultiOrSingleV[message.guild.id].mistakes.length]
-
-    let images = await getImage(url, MultiOrSingleV[message.guild.id].word2, "", message)
-
-    MultiOrSingleV[message.guild.id].msg1 = await message.channel.send(new MessageAttachment(images, `img.jpeg`))
-
-
-    }catch{
-        message.channel.send("An unknown error has occured!")
-    }
-}
-
-
-
-
-
-async function StartSingle(client, message, discord) {
-    try{
-            //get the MultiOrSingleV[message.guild.id].word
-    MultiOrSingleV[message.guild.id].word = await getWord()
-
-
-    //variables
-    const MessageAttachment = discord.MessageAttachment
-
-    MultiOrSingleV[message.guild.id].letters = []
-
-    MultiOrSingleV[message.guild.id].WordLetters = []
-    MultiOrSingleV[message.guild.id].mistakesString = ""
-    //create the table with the characters
-    for (var i = 0; i < MultiOrSingleV[message.guild.id].word.length; i++) {
-        MultiOrSingleV[message.guild.id].letters.push(MultiOrSingleV[message.guild.id].word.charAt(i))
-        if (i == 0) {
-            MultiOrSingleV[message.guild.id].WordLetters.push(MultiOrSingleV[message.guild.id].word.charAt(i))
-        } else if (i == MultiOrSingleV[message.guild.id].word.length - 1) {
-            MultiOrSingleV[message.guild.id].WordLetters.push(MultiOrSingleV[message.guild.id].word.charAt(i))
-        } else {
-            MultiOrSingleV[message.guild.id].WordLetters.push("_")
-        }
-    }
-
-    //creates the text to display to the users
-    MultiOrSingleV[message.guild.id].word2 = ""
-    for (var i = 0; i < MultiOrSingleV[message.guild.id].WordLetters.length; i++) {
-        MultiOrSingleV[message.guild.id].word2 = MultiOrSingleV[message.guild.id].word2 + MultiOrSingleV[message.guild.id].WordLetters[i]
-    }
-
-    //creates the message to send
-    // = ["https://i.imgur.com/mAWaxug.png", "https://i.imgur.com/l0fLASr.png", "https://i.imgur.com/c8uaMBQ.png", "https://i.imgur.com/pRng4Tl.png", "https://i.imgur.com/boDJ25n.png", "https://i.imgur.com/ArNimLI.png", "https://i.imgur.com/kkYj06y.png"]
-    MultiOrSingleV[message.guild.id].mistakes = []
-    let url = imgs[MultiOrSingleV[message.guild.id].mistakes.length]
-
-    let images = await getImage(url, MultiOrSingleV[message.guild.id].word2, "", message)
-
-    MultiOrSingleV[message.guild.id].msg1 = await message.channel.send(new MessageAttachment(images, `img.jpeg`))
-
-    }catch{
-        message.channel.send("An unknown error has occured!")
-    }
-
-
-
-
-}
-
-async function MultiOrSingle(client, message, discord) {
-    //This will ask for the gamemode, i am too lazy to write more comments
-    if (MultiOrSingleV[message.guild.id] == null) {
-        MultiOrSingleV[message.guild.id] = {
-            user: message.author.id
-        }
-
-        em.emit('select', message);
-        MultiOrSingleV[message.guild.id].waiting = true
-        client.on("message", (msg) => {
-            if (MultiOrSingleV[message.guild.id] == null) {
-                return;
-            }
-            if (msg.author.id == MultiOrSingleV[message.guild.id].user) {
-
-                if (MultiOrSingleV[message.guild.id].isInGame == true || MultiOrSingleV[message.guild.id].waiting == false || MultiOrSingleV[message.guild.id].waiting == null) {
-                    return;
-                }
-
-
-
-                msg = msg.content.toLowerCase()
-                if (msg == "singleplayer") {
-                    MultiOrSingleV[message.guild.id].mode = 0
-                    MultiOrSingleV[message.guild.id].waiting = false
-
-                    StartSingle(client, message, discord)
-                } else if (msg == "multiplayer") {
-                    MultiOrSingleV[message.guild.id].waiting = false
-                    MultiOrSingleV[message.guild.id].mode = 1
-                    StartMulti(client, message, discord)
-                }
-            }
-        })
-
-        await sleep(10000);
-        if (MultiOrSingleV[message.guild.id].waiting == true) {
-            em.emit('selectModeTimeout', message);
-            MultiOrSingleV[message.guild.id] = null
-        }
-    } else {
-        message.reply("There is already a game on this server!")
-    }
-}
-
-
-
-let initV = false
-
-
-//recive messages
-
-async function init(client, discord){
-    const MessageAttachment = discord.MessageAttachment
-
-    client.on("message", async (message) => {
-        let msg = message
-        if (message == null) return;
-        if (message.guild == null) return;
-         if (MultiOrSingleV[message.guild.id] != null){
-             if (MultiOrSingleV[message.guild.id].waiting == true) return;
-
-            if(MultiOrSingleV[message.guild.id].mode == 0){
-                //singleplayer
-
-                if (msg.author.bot == false && message.author.id == MultiOrSingleV[message.guild.id].user) {
-                    //checks if the message is more than one character
-                    if (msg.content.length > 1) {
-                        //checks if the message is the same as the MultiOrSingleV[message.guild.id].word
-                        if(MultiOrSingleV[message.guild.id] == null) return;
-                        if (MultiOrSingleV[message.guild.id].word == null) {
-                            MultiOrSingleV[message.guild.id] = null
-                            return
-                        };
-                        if (msg.content.toLowerCase() == MultiOrSingleV[message.guild.id].word.toLowerCase()) {
-                            //creates the message
-                            let url = imgs[MultiOrSingleV[message.guild.id].mistakes.length]
-        
-                            MultiOrSingleV[message.guild.id].mistakesString = ""
-                            for (i = 0; i < MultiOrSingleV[message.guild.id].mistakes.length; i++) {
-                                if (MultiOrSingleV[message.guild.id].mistakesString == "") {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakes[i]
-                                } else {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakesString + ", " + MultiOrSingleV[message.guild.id].mistakes[i]
-                                }
-                            }
-        
-                            if (MultiOrSingleV[message.guild.id].msg1 != null) {
-                                MultiOrSingleV[message.guild.id].msg1.delete()
-                                MultiOrSingleV[message.guild.id].msg1 = null
-                            }
-
-
-                            let images = await getImage(url, MultiOrSingleV[message.guild.id].word, MultiOrSingleV[message.guild.id].mistakesString)
-                            
-                            MultiOrSingleV[message.guild.id].msg1 = await message.channel.send(new MessageAttachment(images, `img.jpeg`))
-        
-                            //fires the wordFound event
-                            em.emit("wordFound", msg)
-                            MultiOrSingleV[message.guild.id].word = null
-                            MultiOrSingleV[message.guild.id] = null
-                        } else {
-                            //wrong
-                            MultiOrSingleV[message.guild.id].mistakes.push(msg.content)
-        
-                            let url = imgs[MultiOrSingleV[message.guild.id].mistakes.length]
-        
-                            MultiOrSingleV[message.guild.id].mistakesString = ""
-                            for (i = 0; i < MultiOrSingleV[message.guild.id].mistakes.length; i++) {
-                                if (MultiOrSingleV[message.guild.id].mistakesString == "") {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakes[i]
-                                } else {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakesString + ", " + MultiOrSingleV[message.guild.id].mistakes[i]
-                                }
-                            }
-        
-                            let images = await getImage(url, MultiOrSingleV[message.guild.id].word2, MultiOrSingleV[message.guild.id].mistakesString, message)
-        
-                            if (MultiOrSingleV[message.guild.id].msg1 != null) {
-                                MultiOrSingleV[message.guild.id].msg1.delete()
-                                MultiOrSingleV[message.guild.id].msg1 = null
-                            }
-        
-                            MultiOrSingleV[message.guild.id].msg1 = await message.channel.send(new MessageAttachment(images, `img.jpeg`))
-        
-                            if (MultiOrSingleV[message.guild.id].mistakes.length == 6) {
-                                em.emit("GameOver", msg)
-                                MultiOrSingleV[message.guild.id].word = null
-                                MultiOrSingleV[message.guild.id] = null
-        
-                            }
-                        }
-                    } else {
-                        //if the letter is found in the MultiOrSingleV[message.guild.id].word, then replace _ with the letter
-                        let found = 0;
-                        for (i = 0; i < MultiOrSingleV[message.guild.id].letters.length; i++) {
-                            if (MultiOrSingleV[message.guild.id].letters[i].toLowerCase() == msg.content.toLowerCase()) {
-                                MultiOrSingleV[message.guild.id].WordLetters[i] = MultiOrSingleV[message.guild.id].letters[i]
-                                found++
-                            }
-                        }
-        
-        
-                        //checks if there are any characters found
-                        if (found > 0) {
-                            // get the MultiOrSingleV[message.guild.id].word
-                            MultiOrSingleV[message.guild.id].word2 = ""
-                            for (var i = 0; i < MultiOrSingleV[message.guild.id].WordLetters.length; i++) {
-                                MultiOrSingleV[message.guild.id].word2 = MultiOrSingleV[message.guild.id].word2 + MultiOrSingleV[message.guild.id].WordLetters[i]
-                            }
-        
-                            //create the message
-        
-                            let url = imgs[MultiOrSingleV[message.guild.id].mistakes.length]
-        
-                            MultiOrSingleV[message.guild.id].mistakesString = ""
-                            for (i = 0; i < MultiOrSingleV[message.guild.id].mistakes.length; i++) {
-                                if (MultiOrSingleV[message.guild.id].mistakesString == "") {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakes[i]
-                                } else {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakesString + ", " + MultiOrSingleV[message.guild.id].mistakes[i]
-                                }
-                            }
-        
-        
-                            let images = await getImage(url, MultiOrSingleV[message.guild.id].word2, MultiOrSingleV[message.guild.id].mistakesString, message)
-        
-                            if (MultiOrSingleV[message.guild.id].msg1 != null) {
-                                MultiOrSingleV[message.guild.id].msg1.delete()
-                                MultiOrSingleV[message.guild.id].msg1 = null
-                            }
-        
-                            MultiOrSingleV[message.guild.id].msg1 = await message.channel.send(new MessageAttachment(images, `img.jpeg`))
-                            if (MultiOrSingleV[message.guild.id].word2 == MultiOrSingleV[message.guild.id].word) {
-                                em.emit("wordFound", msg)
-                                MultiOrSingleV[message.guild.id].word = null
-                                MultiOrSingleV[message.guild.id] = null
-                            }
-                        } else {
-                            //No letters found
-                            MultiOrSingleV[message.guild.id].mistakes.push(msg.content)
-        
-        
-        
-                            let url = imgs[MultiOrSingleV[message.guild.id].mistakes.length]
-        
-                            MultiOrSingleV[message.guild.id].mistakesString = ""
-                            for (i = 0; i < MultiOrSingleV[message.guild.id].mistakes.length; i++) {
-                                if (MultiOrSingleV[message.guild.id].mistakesString == "") {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakes[i]
-                                } else {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakesString + ", " + MultiOrSingleV[message.guild.id].mistakes[i]
-                                }
-                            }
-        
-        
-                            let images = await getImage(url, MultiOrSingleV[message.guild.id].word2, MultiOrSingleV[message.guild.id].mistakesString, message)
-                            if (MultiOrSingleV[message.guild.id].msg1 != null) {
-                                MultiOrSingleV[message.guild.id].msg1.delete()
-                                MultiOrSingleV[message.guild.id].msg1 = null
-                            }
-        
-        
-                            MultiOrSingleV[message.guild.id].msg1 = await message.channel.send(new MessageAttachment(images, `img.jpeg`))
-        
-                            if (MultiOrSingleV[message.guild.id].mistakes.length == 6) {
-                                em.emit("GameOver", msg)
-                                MultiOrSingleV[message.guild.id].word = null
-                                MultiOrSingleV[message.guild.id] = null
-                            }
-                        }
-                    }
-        
-                }
-            }else{
-                //multiplayer
-
-
-
-
-
-
-               if (msg.author.bot == false && message.author.id != MultiOrSingleV[message.guild.id].user) {
-                    //checks if the message is more than one character
-                    if (msg.content.length > 1) {
-                        //checks if the message is the same as the MultiOrSingleV[message.guild.id].word
-                        if(MultiOrSingleV[message.guild.id] == null) return;
-                        if (MultiOrSingleV[message.guild.id].word == null) {
-                            MultiOrSingleV[message.guild.id] = null
-                            return
-                        };
-                        if (msg.content.toLowerCase() == MultiOrSingleV[message.guild.id].word.toLowerCase()) {
-                            //creates the message
-                            let url = imgs[MultiOrSingleV[message.guild.id].mistakes.length]
-        
-                            MultiOrSingleV[message.guild.id].mistakesString = ""
-                            for (i = 0; i < MultiOrSingleV[message.guild.id].mistakes.length; i++) {
-                                if (MultiOrSingleV[message.guild.id].mistakesString == "") {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakes[i]
-                                } else {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakesString + ", " + MultiOrSingleV[message.guild.id].mistakes[i]
-                                }
-                            }
-        
-                            if (MultiOrSingleV[message.guild.id].msg1 != null) {
-                                MultiOrSingleV[message.guild.id].msg1.delete()
-                                MultiOrSingleV[message.guild.id].msg1 = null
-                            }
-
-
-                            let images = await getImage(url, MultiOrSingleV[message.guild.id].word, MultiOrSingleV[message.guild.id].mistakesString)
-                            
-                            MultiOrSingleV[message.guild.id].msg1 = await message.channel.send(new MessageAttachment(images, `img.jpeg`))
-        
-                            //fires the wordFound event
-                            em.emit("wordFound", msg)
-                            MultiOrSingleV[message.guild.id].word = null
-                            MultiOrSingleV[message.guild.id] = null
-                        } else {
-                            //wrong
-                            MultiOrSingleV[message.guild.id].mistakes.push(msg.content)
-        
-                            let url = imgs[MultiOrSingleV[message.guild.id].mistakes.length]
-        
-                            MultiOrSingleV[message.guild.id].mistakesString = ""
-                            for (i = 0; i < MultiOrSingleV[message.guild.id].mistakes.length; i++) {
-                                if (MultiOrSingleV[message.guild.id].mistakesString == "") {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakes[i]
-                                } else {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakesString + ", " + MultiOrSingleV[message.guild.id].mistakes[i]
-                                }
-                            }
-        
-                            let images = await getImage(url, MultiOrSingleV[message.guild.id].word2, MultiOrSingleV[message.guild.id].mistakesString, message)
-        
-                            if (MultiOrSingleV[message.guild.id].msg1 != null) {
-                                MultiOrSingleV[message.guild.id].msg1.delete()
-                                MultiOrSingleV[message.guild.id].msg1 = null
-                            }
-        
-                            MultiOrSingleV[message.guild.id].msg1 = await message.channel.send(new MessageAttachment(images, `img.jpeg`))
-        
-                            if (MultiOrSingleV[message.guild.id].mistakes.length == 6) {
-                                em.emit("GameOver", msg)
-                                MultiOrSingleV[message.guild.id].word = null
-                                MultiOrSingleV[message.guild.id] = null
-        
-                            }
-                        }
-                    } else {
-                        //if the letter is found in the MultiOrSingleV[message.guild.id].word, then replace _ with the letter
-                        let found = 0;
-                        for (i = 0; i < MultiOrSingleV[message.guild.id].letters.length; i++) {
-                            if (MultiOrSingleV[message.guild.id].letters[i].toLowerCase() == msg.content.toLowerCase()) {
-                                MultiOrSingleV[message.guild.id].WordLetters[i] = MultiOrSingleV[message.guild.id].letters[i]
-                                found++
-                            }
-                        }
-        
-        
-                        //checks if there are any characters found
-                        if (found > 0) {
-                            // get the MultiOrSingleV[message.guild.id].word
-                            MultiOrSingleV[message.guild.id].word2 = ""
-                            for (var i = 0; i < MultiOrSingleV[message.guild.id].WordLetters.length; i++) {
-                                MultiOrSingleV[message.guild.id].word2 = MultiOrSingleV[message.guild.id].word2 + MultiOrSingleV[message.guild.id].WordLetters[i]
-                            }
-        
-                            //create the message
-        
-                            let url = imgs[MultiOrSingleV[message.guild.id].mistakes.length]
-        
-                            MultiOrSingleV[message.guild.id].mistakesString = ""
-                            for (i = 0; i < MultiOrSingleV[message.guild.id].mistakes.length; i++) {
-                                if (MultiOrSingleV[message.guild.id].mistakesString == "") {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakes[i]
-                                } else {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakesString + ", " + MultiOrSingleV[message.guild.id].mistakes[i]
-                                }
-                            }
-        
-        
-                            let images = await getImage(url, MultiOrSingleV[message.guild.id].word2, MultiOrSingleV[message.guild.id].mistakesString, message)
-        
-                            if (MultiOrSingleV[message.guild.id].msg1 != null) {
-                                MultiOrSingleV[message.guild.id].msg1.delete()
-                                MultiOrSingleV[message.guild.id].msg1 = null
-                            }
-        
-                            MultiOrSingleV[message.guild.id].msg1 = await message.channel.send(new MessageAttachment(images, `img.jpeg`))
-                            if (MultiOrSingleV[message.guild.id].word2 == MultiOrSingleV[message.guild.id].word) {
-                                em.emit("wordFound", msg)
-                                MultiOrSingleV[message.guild.id].word = null
-                                MultiOrSingleV[message.guild.id] = null
-                            }
-                        } else {
-                            //No letters found
-                            MultiOrSingleV[message.guild.id].mistakes.push(msg.content)
-        
-        
-        
-                            let url = imgs[MultiOrSingleV[message.guild.id].mistakes.length]
-        
-                            MultiOrSingleV[message.guild.id].mistakesString = ""
-                            for (i = 0; i < MultiOrSingleV[message.guild.id].mistakes.length; i++) {
-                                if (MultiOrSingleV[message.guild.id].mistakesString == "") {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakes[i]
-                                } else {
-                                    MultiOrSingleV[message.guild.id].mistakesString = MultiOrSingleV[message.guild.id].mistakesString + ", " + MultiOrSingleV[message.guild.id].mistakes[i]
-                                }
-                            }
-        
-        
-                            let images = await getImage(url, MultiOrSingleV[message.guild.id].word2, MultiOrSingleV[message.guild.id].mistakesString, message)
-                            if (MultiOrSingleV[message.guild.id].msg1 != null) {
-                                MultiOrSingleV[message.guild.id].msg1.delete()
-                                MultiOrSingleV[message.guild.id].msg1 = null
-                            }
-        
-        
-                            MultiOrSingleV[message.guild.id].msg1 = await message.channel.send(new MessageAttachment(images, `img.jpeg`))
-        
-                            if (MultiOrSingleV[message.guild.id].mistakes.length == 6) {
-                                em.emit("GameOver", msg)
-                                MultiOrSingleV[message.guild.id].word = null
-                                MultiOrSingleV[message.guild.id] = null
-                            }
-                        }
-                    }
-        
-                }
-            }
-        }
-    })
-}
-
-
-
-
 
 
 module.exports = em
 
-module.exports.start = (client, message, discord) => {
-    if(initV == false){
-        initV = true
-        init(client, discord)
-    }
-    if (message.guild != null) {
-        if (client == null || message == null || discord == null) {
-            throw new TypeError("hangman-discord: at Function start, Missing parameters")
+
+async function startMulti(client, message, discord) {
+    let word = await getWord()
+    let WordLetters = []
+    let WordArray = []
+    em.emit("wordSet", word)
+    for (var i = 0; i < word.length; i++) {
+        WordArray.push(word.charAt(i))
+        if (i == 0) {
+            WordLetters.push(word.charAt(i))
+        } else if (i == word.length - 1) {
+            WordLetters.push(word.charAt(i))
         } else {
-            MultiOrSingle(client, message, discord)
+            WordLetters.push("_")
         }
+    }
+
+    games[message.guild.id] = { game: 'multi', word: word, message: message, discord: discord, client: client, mistakes: [], wordLetters: WordLetters, wordArray: WordArray }
+    let image = await getImage(imgs[games[message.guild.id].mistakes.length], games[message.guild.id].wordLetters.join(""), games[message.guild.id].mistakes.join(", "), message)
+    games[message.guild.id].msg1 = await message.channel.send({ files: [new MessageAttachment(image, `img.jpeg`)] })
+
+}
+
+
+async function startSingle(client, message, discord) {
+    let word = await getWord()
+    let WordLetters = []
+    let WordArray = []
+    em.emit("wordSet", word)
+    for (var i = 0; i < word.length; i++) {
+        WordArray.push(word.charAt(i))
+        if (i == 0) {
+            WordLetters.push(word.charAt(i))
+        } else if (i == word.length - 1) {
+            WordLetters.push(word.charAt(i))
+        } else {
+            WordLetters.push("_")
+        }
+    }
+
+    games[message.guild.id] = { game: 'single', word: word, message: message, discord: discord, client: client, mistakes: [], wordLetters: WordLetters, wordArray: WordArray }
+    let image = await getImage(imgs[games[message.guild.id].mistakes.length], games[message.guild.id].wordLetters.join(""), games[message.guild.id].mistakes.join(", "), message)
+    games[message.guild.id].msg1 = await message.channel.send({ files: [new MessageAttachment(image, `img.jpeg`)] })
+}
+
+function check(data) {
+    if (data.mistakes.length == imgs.length - 1) {
+        return 0
+    } else if (data.word == data.wordLetters.join("")) {
+        return 1
     } else {
-        message.reply("You must run this command from a server!")
+        return 2
+    }
+}
+
+
+async function receivedWordSingle(message2, discord) {
+    message = message2.content.toLowerCase().split(" ")[0]
+    let data = games[message2.guild.id]
+    let Correct = false
+    if (message == data.word.toLowerCase()) {
+
+        Correct = true
+        games[message2.guild.id].wordLetters = data.word.split('')
+    } else {
+        for (i = 0; i < data.wordArray.length; i++) {
+            if (data.wordArray[i].toLowerCase() == message.toLowerCase()) {
+                Correct = true
+                games[message2.guild.id].wordLetters[i] = games[message2.guild.id].wordArray[i]
+            }
+        }
+    }
+
+    if (Correct == false) {
+        if (!data.mistakes.find(m => m == message)) games[message2.guild.id].mistakes.push(message)
+    }
+    if (games[message2.guild.id].msg1) games[message2.guild.id].msg1.delete()
+    console.log(data.wordLetters)
+    console.log(data.wordLetters.join(""))
+    let image = await getImage(imgs[games[message2.guild.id].mistakes.length], games[message2.guild.id].wordLetters.join(""), games[message2.guild.id].mistakes.join(", "), message2)
+    games[message2.guild.id].msg1 = await message2.channel.send({ files: [new MessageAttachment(image, `img.jpeg`)] })
+
+
+
+    let chk = await check(games[message2.guild.id])
+    if (chk == 1) {
+        em.emit("wordFound", message2)
+        games[message2.guild.id] = null
+    } else if (chk == 0) {
+        em.emit("gameEndedSingle", message2)
+        games[message2.guild.id] = null
+    }
+}
+
+
+
+
+
+
+
+
+
+async function receivedWordMulti(message2, discord) {
+    message = message2.content.toLowerCase().split(" ")[0]
+    let data = games[message2.guild.id]
+    let Correct = false
+    if (message == data.word.toLowerCase()) {
+
+        Correct = true
+        games[message2.guild.id].wordLetters = data.word.split('')
+    } else {
+        for (i = 0; i < data.wordArray.length; i++) {
+            if (data.wordArray[i].toLowerCase() == message.toLowerCase()) {
+                Correct = true
+                games[message2.guild.id].wordLetters[i] = games[message2.guild.id].wordArray[i]
+            }
+        }
+    }
+
+    if (Correct == false) {
+        if (!data.mistakes.find(m => m == message)) games[message2.guild.id].mistakes.push(message)
+    }
+    if (games[message2.guild.id].msg1 != null) games[message2.guild.id].msg1.delete()
+    console.log(data.wordLetters)
+    console.log(data.wordLetters.join(""))
+    let image = await getImage(imgs[games[message2.guild.id].mistakes.length], games[message2.guild.id].wordLetters.join(""), games[message2.guild.id].mistakes.join(", "), message2)
+    games[message2.guild.id].msg1 = await message2.channel.send({ files: [new MessageAttachment(image, `img.jpeg`)] })
+
+
+
+    let chk = await check(games[message2.guild.id])
+    if (chk == 1) {
+        em.emit("wordFound", message2)
+        games[message2.guild.id] = null
+    } else if (chk == 0) {
+        em.emit("gameEndedMulti", message2)
+        games[message2.guild.id] = null
+    }
+}
+
+
+
+
+
+let initv = false
+
+async function init(client, msg, discord) {
+    initv = true
+    MessageAttachment = discord.MessageAttachment
+    client.on('messageCreate', (message) => {
+        if (message.guild == null) return
+        if (games[message.guild.id]) {
+            if (games[message.guild.id].game == 'single') {
+                if (games[message.guild.id].message.member.id == message.member.id && games[message.guild.id].message.channel.id == message.channel.id) {
+                    receivedWordSingle(message, discord)
+                    return
+                }
+            } else if (games[message.guild.id].game == 'multi') {
+                if (message.author.bot == true) return
+                if (games[message.guild.id].message.channel.id == message.channel.id) {
+                    receivedWordMulti(message, discord)
+                    return
+                }
+            }
+        }
+    })
+}
+
+module.exports.start = (client, message, discord) => {
+    let args = []
+    if (initv == false) init(client, message, discord)
+    if (games[message.guild.id]) return em.emit("gameExists", message)
+    if (args[0] == "singleplayer") {
+        startSingle(client, message, discord)
+        return
+    } else if (args[0] == "multiplayer") {
+        startMulti(client, message, discord)
+    } else {
+        em.emit("select", message)
+        message.channel.awaitMessages({ filter: m => m.member.id == message.member.id & m.channel == message.channel & (m.content.toLowerCase() == 'multiplayer' || m.content.toLowerCase() == 'singleplayer' || m.content.toLowerCase() == 'multi' || m.content.toLowerCase() == 'single'), max: 1, time: 15000, errors: ['time'] })
+            .then(async collected => {
+                let message = collected.first()
+                if (message.content.toLowerCase() == 'singleplayer' || message.content.toLowerCase() == 'single') {
+                    startSingle(client, message, discord)
+                } else {
+                    startMulti(client, message, discord)
+                }
+            })
+            .catch(err => {
+                em.emit("selectTimeout", message)
+            })
     }
 }
 
 module.exports.stop = (client, message) => {
-    if (message.guild != null) {
-        if (client == null || message == null) {
-            throw new TypeError("hangman-discord: at Function stop, Missing parameters")
-        } else {
-            if (MultiOrSingleV[message.guild.id] != null && MultiOrSingleV[message.guild.id].waiting == false) {
-                em.emit("GameEnded", message)
-                MultiOrSingleV[message.guild.id] = null
-            } else {
-                em.emit("noGame", message)
-            }
-        }
-    } else {
-        message.reply("You must run this command from a server!")
+    if (games[message.guild.id]){
+        games[message.guild.id] = null
+        em.emit("gameStop")
+    }else{
+        em.emit("noGame")
     }
-
 }
