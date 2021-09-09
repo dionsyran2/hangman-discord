@@ -1,25 +1,10 @@
-# Whats new in 1.4.1
-* Removed a useless library that was installed
+# Whats new in 1.4.3
+* Upgraded from discord.js v12.5 to v13
+* The entire package was rewritten
 
-* Fixed bugs from 1.3.4 and 1.3.8
-* Multiplayer Works
-* In multiplayer the host (**The person who selects the word**) cannot play!
-* In singleplayer only one person (The person who runs the start command) can play!
-
-
-# in 1.3.9 - 1.4.0
-Removing useless dependencies
-
-# 1.3.8
-* A lot of bug fixes, **BUT** multiplayer does not work!!!
-
-# 1.3.7
-* New reritten code for receiving messages
-* Bugs such as **The user who puts the word at multiplayer can play** and **Every user can play in singleplayer** are going to be fixed tommorrow (V1.3.9) So please make sure to always run **npm i** when you start your discord bot
-
-# 1.3.5
-* I realised that if the bot was in multiple servers and a game was in some of them the bot would just go crazy
-Its now fixed, Make sure to always update to the newest version!!!
+# 1.4.2
+* Added github page [https://github.com/dionsyran2/hangman-discord](https://github.com/dionsyran2/hangman-discord/)
+* For issues please go here [https://github.com/dionsyran2/hangman-discord/issues](https://github.com/dionsyran2/hangman-discord/issues)
 
 
 
@@ -73,17 +58,22 @@ Hangman.on("wordFound", (message) => {
     message.reply("Correct! To start another round please type !start")
 })
 
-Hangman.on("GameOver", (message) => {
-    message.channel.send("No one found the word. To start another round please type !start")
+Hangman.on("gameEnded", (message) => {
+    message.channel.send("No one found the word")
 })
 
-Hangman.on("GameEnded", (message) => {
-    message.channel.send("No one found the word, someone ended the game!")
+Hangman.on("gameEndedSingle", (message) => {
+    message.channel.send(`Sorry, <@${message.author.id}> You did not find the word!`)
 })
+
+Hangman.on("gameStop", (message) => {
+    message.channel.send("The game was ended using !stop")
+})
+
 ```
 
 **Send message to tell the user to select a gamemode**
-**__This is required if you want the user to get asked to select gamemode else it will just time out as it will get no response!
+**__This is required if you want the user to get asked to select gamemode else it will just time out as it will get no response!__**
 ```javascript
 Hangman.on("select", (message) => {
     message.channel.send("Choose Gamemode: **singleplayer** or **multiplayer**")
@@ -92,19 +82,20 @@ Hangman.on("select", (message) => {
 
 **Other Events**
 ```javascript
-//This will run when the stop function runs but there is no game on the server
-Hangman.on("noGame", (message) => {
-    message.reply("There is no game on this server, to start a game, type !start")
+Hangman.on("gameExists", (message) => {
+    message.channel.send("There is already a game running in this server!")
 })
 
-//this will run when the word is selected
 Hangman.on("wordSet", (word) => {
     console.log(`Current word set to: ${word}`)
 })
 
-//This will run when 10 seconds have past and no gamemode has been selected
-Hangman.on("selectModeTimeout", (message) => {
-    message.reply("You didn't tell me if you want to play **singleplayer** or **multiplayer**!")
+Hangman.on("cannotDM", (message) => {
+    message.reply("It looks like i cannot dm you :(")
+})
+
+Hangman.on("wordSelectTimeout", (message) => {
+    message.member.send("Timeout")
 })
 ```
 
@@ -112,34 +103,43 @@ Hangman.on("selectModeTimeout", (message) => {
 ### Functions:
 
 > start(client, message, discord)
-This will start a game
+**This will start a game**
 
 >stop(client, message)
-This will end a game, if there is one
+**This will end a game, if there is one.**
 
 
 ### Events:
 
->selectModeTimeout (message)
-This will fire when 10 seconds have past and no gamemode has been selected
+>selectTimeout (message)
+**This will get called if no mode is selected within 15 seconds when using the `hangman.start(...)`.**
 
 >select (message)
-This will get fired when you have to tell the user/member to select a gamemode
+**This will get called when the `hangman.start(...)` runs.**
 
 >wordFound (message)
-This will get fired when someone found the word
+**As its name says, this will get called once someone finds the word.**
 
->GameOver (message)
-This will get fired when the hangman is fully drawn
+>gameEnded (message)
+**This gets called when the game ends, with no winner.**
 
->GameEnded (message)
-This will get fired when someone ends the game (with the stop function)
+>gameEndedSingle (message)
+**The same as `gameEnded` but this is for singleplayer.**
 
->noGame (message)
-This will get fired when the stop function runs but there is no game in the server
+>gameExists (message)
+**This gets called when `hangman.start(...)` runs but there is already an active game in the server.**
+
+>cannotDM (message)
+**This gets called if the module cannot DM (Direct Message) a user.**
+
+>gameStop (message)
+**This gets called when `hangman.stop(...)` runs and there is an active game.**
+
+>noGame(message)
+**This gets called when `hangman.stop(...)` is called but there is no active game.**
 
 >wordSet (word)
-This will get fired when the word is set
+**This will get called when the word is set.**
 
 
 
@@ -147,14 +147,22 @@ This will get fired when the word is set
 
 ## Code Example:
 ```javascript
-    const Hangman = require("hangman-discord")
+const Hangman = require("hangman-discord")
 const discord = require("discord.js")
-const client = new discord.Client()
+
+const Intents = new discord.Intents([
+    "GUILDS",
+    "GUILD_MESSAGES",
+    "DIRECT_MESSAGES",
+    
+]);
+
+const client = new discord.Client({ intents: Intents })
 
 let config = {
     prefix: "!"
 }
-client.on("message", (message) => {
+client.on("messageCreate", (message) => {
     if (message.mentions.users.first() === client.user) {
 
         message.channel.send("My prefix is " + config.prefix)
@@ -170,7 +178,7 @@ client.on("message", (message) => {
     const command = args.shift().toLowerCase();
 
     if (command == "start") {
-        Hangman.start(client, message, discord)
+        Hangman.start(client, message, discord, args)
     }
     if (command == "end") {
         Hangman.stop(client, message)
@@ -182,8 +190,8 @@ client.on("ready", () => {
 
 })
 
-Hangman.on("selectModeTimeout", (message) => {
-    message.reply("You didn't tell me if you want to play **singleplayer** or **multiplayer**!")
+Hangman.on("selectTimeout", (message) => {
+    message.channel.send("Timeout!")
 })
 Hangman.on("select", (message) => {
     message.channel.send("Choose Gamemode: **singleplayer** or **multiplayer**")
@@ -191,24 +199,42 @@ Hangman.on("select", (message) => {
 })
 
 Hangman.on("wordFound", (message) => {
-    message.reply("Correct! To start another round please type !start")
+    message.channel.send(`<@${message.author.id}> You found the word! To start another round please type !start`)
 })
 
-Hangman.on("GameOver", (message) => {
-    message.channel.send("No one found the word. To start another round please type !start")
+
+Hangman.on("gameEnded", (message) => {
+    message.channel.send("No one found the word")
 })
 
-Hangman.on("GameEnded", (message) => {
-    message.channel.send("No one found the word, someone ended the game!")
+Hangman.on("gameEndedSingle", (message) => {
+    message.channel.send(`Sorry, <@${message.author.id}> You did not find the word!`)
+})
+
+Hangman.on("wordSet", (word) => {
+    //For Testing!!!!!!
+    console.log(`Current word set to: ${word}`)
+})
+
+Hangman.on("gameExists", (message) => {
+    message.channel.send("There is already a game running in this server!")
+})
+
+Hangman.on("cannotDM", (message) => {
+    message.reply("It looks like i cannot dm you :(")
+})
+
+Hangman.on("wordSelectTimeout", (message) => {
+    message.member.send("Timeout")
+})
+
+Hangman.on("gameStop", (message) => {
+    message.channel.send("The game was ended using !stop")
 })
 
 Hangman.on("noGame", (message) => {
-    message.reply("There is no game on this server, to start a game, type !start")
-})
-Hangman.on("wordSet", (word) => {
-    console.log(`Current word set to: ${word}`)
+    message.member.send("There is no game active right now!")
 })
 
 client.login("Token Goes Here")
 ```
-**Better Documentation and more functionality is comming soon!**
